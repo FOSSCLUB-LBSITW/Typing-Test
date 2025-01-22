@@ -1,8 +1,3 @@
-# Typing-Test
-Here's a **README** file for your **Typing Speed Test** project, similar in style to the one you provided:  
-
----
-
 # Typing Speed Test  
 
 A simple and engaging typing speed test application built with Python and Tkinter. Test your typing speed and accuracy by typing sentences as quickly as you can!  
