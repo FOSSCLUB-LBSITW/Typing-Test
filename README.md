@@ -1,5 +1,11 @@
-# Typing Speed Test  
+# FIRST TIME IN LBSITW: Hack the Stack
 
+![Banner](https://github.com/user-attachments/assets/f656cd04-5306-49f9-9384-655e8d0b626c)
+
+**_This is Exclusive for LBTIANS !_**
+
+# Typing Speed Test  
+## Contributed by  Uttara Praveen,IT Department LBSITW
 A simple and engaging typing speed test application built with Python and Tkinter. Test your typing speed and accuracy by typing sentences as quickly as you can!  
 
 ## Features  
