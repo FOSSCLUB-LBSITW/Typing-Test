@@ -46,4 +46,5 @@ A simple and engaging typing speed test application built with Python and Tkinte
 - Python 3.x  
 - Tkinter (comes pre-installed with Python)  
 
-Happy Learning !!! 
+## Happy Coding and Creating! 😊  
+Let the stories unfold and the laughter begin! 🎉
