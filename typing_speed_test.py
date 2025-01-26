@@ -55,6 +55,15 @@ class TypingSpeedTest:
         self.input_textbox.delete(0, tk.END)
         self.input_textbox.focus()
         self.start_time = time.time()
+
+        # update button to restart test
+        self.start_button.config(text="Restart Test", state=tk.DISABLED)
+        self.input_textbox.bind("<KeyRelease>", self.enable_button_after_typing)
+
+    def enable_button_after_typing(self, event=None):
+        """Enables the button once typing starts."""
+        self.start_button.config(state=tk.NORMAL)
+        self.input_textbox.unbind("<KeyRelease>") 
     
     def check_result(self, event=None):
         """Checks the typing speed and accuracy."""
