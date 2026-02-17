@@ -42,6 +42,8 @@ A simple and engaging typing speed test application built with Python and Tkinte
 - **Check Results**: Press "Enter" to submit and view your speed in WPM.  
 - **Restart**: Click "Start Test" to try again with a new sentence.  
 
+jhgjhgjhgjhg
+
 ## Requirements  
 - Python 3.x  
 - Tkinter (comes pre-installed with Python)  
