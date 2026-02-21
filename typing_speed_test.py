@@ -15,14 +15,20 @@ class TypingSpeedTest:
     def __init__(self, root):
         self.root = root
         self.root.title("Typing Speed Test")
-        self.root.geometry("600x520") # Increased height to accommodate the new button
+        self.root.geometry("600x550")
         self.root.resizable(False, False)
         
         self.start_time = None
         self.current_sentence = ""
+        self.time_left = 60  # Timer duration
+        self.timer_running = False
         
         self.title_label = tk.Label(root, text="Typing Speed Test", font=("Helvetica", 18, "bold"))
         self.title_label.pack(pady=10)
+
+        # --- NEW: Timer Label ---
+        self.timer_label = tk.Label(root, text="Time Remaining: 60s", font=("Helvetica", 14, "bold"), fg="blue")
+        self.timer_label.pack(pady=5)
         
         self.instruction_label = tk.Label(root, text="Type the exact sentence below as fast as you can:", font=("Helvetica", 14))
         self.instruction_label.pack(pady=10)
@@ -42,12 +48,9 @@ class TypingSpeedTest:
         self.input_textbox.tag_configure("correct", foreground="green")
         self.input_textbox.tag_configure("incorrect", foreground="red")
         
-        # --- BUTTON SECTION ---
-        # The Start/Restart Button
         self.start_button = tk.Button(root, text="Start Test", font=("Helvetica", 14), command=self.start_test)
         self.start_button.pack(pady=10)
 
-        # NEW: Dedicated Display Results Button
         self.result_button = tk.Button(root, text="Display Results", font=("Helvetica", 14), command=self.check_result, state=tk.DISABLED)
         self.result_button.pack(pady=10)
         
@@ -60,10 +63,33 @@ class TypingSpeedTest:
         self.current_sentence = random.choice(SENTENCES)
         self.sentence_label.config(text=self.current_sentence)
         self.input_textbox.delete("1.0", tk.END)
+        self.input_textbox.config(state=tk.NORMAL) # Ensure textbox is enabled
         self.input_textbox.focus()
+        
+        # Reset Timer State
+        self.time_left = 60
+        self.timer_running = True
+        self.timer_label.config(text="Time Remaining: 60s", fg="blue")
+        
         self.start_time = time.time()
         self.start_button.config(text="Restart Test", state=tk.DISABLED)
-        self.result_button.config(state=tk.NORMAL) # Enable result button when test starts
+        self.result_button.config(state=tk.NORMAL)
+        
+        self.update_timer() # Start the countdown loop
+
+    def update_timer(self):
+        """Recursively calls itself every 1 second to update the clock."""
+        if self.time_left > 0 and self.timer_running:
+            self.time_left -= 1
+            self.timer_label.config(text=f"Time Remaining: {self.time_left}s")
+            
+            # Visual warning: Turn red when time is low
+            if self.time_left <= 10:
+                self.timer_label.config(fg="red")
+                
+            self.root.after(1000, self.update_timer) # Schedule next update
+        elif self.time_left == 0:
+            self.check_result() # Auto-finish when time runs out
 
     def enable_button_after_typing(self, event=None):
         self.start_button.config(state=tk.NORMAL)
@@ -77,11 +103,9 @@ class TypingSpeedTest:
         self.input_textbox.tag_remove("incorrect", "1.0", "end")
         
         has_case_error = False
-        
         for i, ch in enumerate(typed_text):
             start = f"1.0+{i}c"
             end = f"1.0+{i+1}c"
-            
             if i < len(self.current_sentence):
                 if ch == self.current_sentence[i]:
                     self.input_textbox.tag_add("correct", start, end)
@@ -99,23 +123,28 @@ class TypingSpeedTest:
     
     def check_result(self, event=None):
         if not self.start_time:
-            messagebox.showwarning("Warning", "Click 'Start Test' first!")
             return "break"
         
+        self.timer_running = False # Stop the timer
         end_time = time.time()
         elapsed_time = end_time - self.start_time
         
         typed_text = self.input_textbox.get("1.0", "end-1c")
+        
+        # Calculate WPM based on actual time elapsed or total characters
         if typed_text.strip() == self.current_sentence:
             word_count = len(self.current_sentence.split())
             wpm = (word_count / elapsed_time) * 60
-            self.result_label.config(text=f"Well done! Your typing speed is {wpm:.2f} WPM.", fg="green")
-            self.error_feedback_label.config(text="")
+            self.result_label.config(text=f"Well done! Speed: {wpm:.2f} WPM.", fg="green")
         else:
-            self.result_label.config(text="Incorrect typing! Try again.", fg="red")
+            # If time ran out or manual check, calculate partial WPM
+            chars_typed = len(typed_text)
+            wpm = (chars_typed / 5) / (elapsed_time / 60)
+            self.result_label.config(text=f"Time's up/Finished! Speed: {wpm:.2f} WPM.", fg="blue")
         
+        self.input_textbox.config(state=tk.DISABLED) # Disable typing after result
         self.start_time = None
-        self.result_button.config(state=tk.DISABLED) # Disable until next test starts
+        self.result_button.config(state=tk.DISABLED)
         return "break"
 
 if __name__ == "__main__":
