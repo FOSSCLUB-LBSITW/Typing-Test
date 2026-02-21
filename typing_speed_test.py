@@ -1,7 +1,12 @@
-import tkinter as tk
-from tkinter import messagebox
+import customtkinter as ctk
 import random
 import time
+
+
+# --- Theme Configuration ---
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
+
 
 SENTENCES = [
     "Technology is the most effective way to change the world",
@@ -11,143 +16,161 @@ SENTENCES = [
     "Artificial Intelligence: where innovation meets computation in the pursuit of a smarter tomorrow."
 ]
 
-class TypingSpeedTest:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Typing Speed Test")
-        self.root.geometry("600x550")
-        self.root.resizable(False, False)
-        
+
+class TypingSpeedTest(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+
+
+        self.title("Typing Speed Test Pro")
+        self.geometry("700x550")
+        self.resizable(False, False)
+
+
         self.start_time = None
         self.current_sentence = ""
-        self.time_left = 60  # Timer duration
+        self.time_left = 60
         self.timer_running = False
-        
-        self.title_label = tk.Label(root, text="Typing Speed Test", font=("Helvetica", 18, "bold"))
-        self.title_label.pack(pady=10)
 
-        # --- NEW: Timer Label ---
-        self.timer_label = tk.Label(root, text="Time Remaining: 60s", font=("Helvetica", 14, "bold"), fg="blue")
+
+        # --- UI LAYOUT ---
+        self.title_label = ctk.CTkLabel(self, text="Typing Speed Test", font=("Helvetica", 28, "bold"))
+        self.title_label.pack(pady=20)
+
+
+        self.timer_label = ctk.CTkLabel(self, text="Time Remaining: 60s", font=("Helvetica", 16, "bold"), text_color="#3B8ED0")
         self.timer_label.pack(pady=5)
-        
-        self.instruction_label = tk.Label(root, text="Type the exact sentence below as fast as you can:", font=("Helvetica", 14))
-        self.instruction_label.pack(pady=10)
-        
-        self.sentence_label = tk.Label(root, text="", font=("Helvetica", 16), wraplength=550, justify="center")
-        self.sentence_label.pack(pady=10)
-        
-        self.input_textbox = tk.Text(root, font=("Helvetica", 14), width=50, height=2)
-        self.input_textbox.pack(pady=5)
-        
-        self.error_feedback_label = tk.Label(root, text="", font=("Helvetica", 10, "bold"), fg="orange")
-        self.error_feedback_label.pack()
 
-        self.input_textbox.bind("<Return>", self.check_result)
-        self.input_textbox.bind("<KeyRelease>", self.validate_typing)
-        self.input_textbox.bind("<KeyRelease>", self.enable_button_after_typing, add="+")
-        self.input_textbox.tag_configure("correct", foreground="green")
-        self.input_textbox.tag_configure("incorrect", foreground="red")
-        
-        self.start_button = tk.Button(root, text="Start Test", font=("Helvetica", 14), command=self.start_test)
-        self.start_button.pack(pady=10)
 
-        self.result_button = tk.Button(root, text="Display Results", font=("Helvetica", 14), command=self.check_result, state=tk.DISABLED)
-        self.result_button.pack(pady=10)
-        
-        self.result_label = tk.Label(root, text="", font=("Helvetica", 14, "italic"), fg="green")
+        self.sentence_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.sentence_frame.pack(pady=20, padx=40)
+
+
+        self.sentence_label = ctk.CTkLabel(self.sentence_frame, text="Press 'Start Test' to begin", font=("Helvetica", 18),
+                                           wraplength=600, justify="center", text_color="gray")
+        self.sentence_label.pack()
+
+
+        self.input_textbox = ctk.CTkTextbox(self, font=("Helvetica", 16), width=550, height=100, border_width=2)
+        self.input_textbox.pack(pady=10)
+        self.input_textbox.bind("<KeyRelease>", self.handle_input)
+       
+        # Diagnostic Feedback Label
+        self.feedback_label = ctk.CTkLabel(self, text="", font=("Helvetica", 12, "bold"))
+        self.feedback_label.pack()
+
+
+        # Button Container
+        self.button_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.button_frame.pack(pady=20)
+
+
+        self.start_button = ctk.CTkButton(self.button_frame, text="Start Test", font=("Helvetica", 14, "bold"),
+                                          command=self.start_test, height=40)
+        self.start_button.grid(row=0, column=0, padx=10)
+
+
+        self.result_button = ctk.CTkButton(self.button_frame, text="Display Results", font=("Helvetica", 14, "bold"),
+                                           command=self.check_result, state="disabled", height=40, fg_color="gray")
+        self.result_button.grid(row=0, column=1, padx=10)
+
+
+        self.result_label = ctk.CTkLabel(self, text="", font=("Helvetica", 18, "italic"))
         self.result_label.pack(pady=10)
-    
+
+
+        self.available_sentences = SENTENCES.copy()
+        random.shuffle(self.available_sentences)
     def start_test(self):
-        self.result_label.config(text="")
-        self.error_feedback_label.config(text="")
+        self.result_label.configure(text="")
+        self.feedback_label.configure(text="")
         self.current_sentence = random.choice(SENTENCES)
-        self.sentence_label.config(text=self.current_sentence)
-        self.input_textbox.delete("1.0", tk.END)
-        self.input_textbox.config(state=tk.NORMAL) # Ensure textbox is enabled
+        self.sentence_label.configure(text=self.current_sentence, text_color="white")
+        self.input_textbox.delete("1.0", "end")
+        self.input_textbox.configure(state="normal")
         self.input_textbox.focus()
-        
-        # Reset Timer State
+       
+        if not self.available_sentences:
+            self.available_sentences = SENTENCES.copy()
+            random.shuffle(self.available_sentences)
+            self.current_sentence = self.available_sentences.pop()
+       
+        self.sentence_label.configure(text=self.current_sentence, text_color="white")
+        # ... rest of start_test code ...
         self.time_left = 60
         self.timer_running = True
-        self.timer_label.config(text="Time Remaining: 60s", fg="blue")
-        
+        self.timer_label.configure(text="Time Remaining: 60s", text_color="#3B8ED0")
+       
         self.start_time = time.time()
-        self.start_button.config(text="Restart Test", state=tk.DISABLED)
-        self.result_button.config(state=tk.NORMAL)
-        
-        self.update_timer() # Start the countdown loop
+        self.start_button.configure(state="disabled")
+        self.result_button.configure(state="normal", fg_color="#3B8ED0")
+       
+        self.update_timer()
+
 
     def update_timer(self):
-        """Recursively calls itself every 1 second to update the clock."""
         if self.time_left > 0 and self.timer_running:
             self.time_left -= 1
-            self.timer_label.config(text=f"Time Remaining: {self.time_left}s")
-            
-            # Visual warning: Turn red when time is low
+            self.timer_label.configure(text=f"Time Remaining: {self.time_left}s")
             if self.time_left <= 10:
-                self.timer_label.config(fg="red")
-                
-            self.root.after(1000, self.update_timer) # Schedule next update
+                self.timer_label.configure(text_color="#FF4C4C")
+            self.after(1000, self.update_timer)
         elif self.time_left == 0:
-            self.check_result() # Auto-finish when time runs out
+            self.check_result()
 
-    def enable_button_after_typing(self, event=None):
-        self.start_button.config(state=tk.NORMAL)
-    
-    def validate_typing(self, event=None):
-        if not self.current_sentence:
-            return
-        
+
+    def handle_input(self, event):
+        if not self.current_sentence: return
+        self.validate_typing()
+       
+        # Auto-finish if sentence is complete
         typed_text = self.input_textbox.get("1.0", "end-1c")
-        self.input_textbox.tag_remove("correct", "1.0", "end")
-        self.input_textbox.tag_remove("incorrect", "1.0", "end")
-        
+        if typed_text.strip() == self.current_sentence:
+            self.check_result()
+
+
+    def validate_typing(self):
+        typed_text = self.input_textbox.get("1.0", "end-1c")
         has_case_error = False
+        has_char_error = False
+
+
         for i, ch in enumerate(typed_text):
-            start = f"1.0+{i}c"
-            end = f"1.0+{i+1}c"
             if i < len(self.current_sentence):
-                if ch == self.current_sentence[i]:
-                    self.input_textbox.tag_add("correct", start, end)
-                else:
-                    self.input_textbox.tag_add("incorrect", start, end)
+                if ch != self.current_sentence[i]:
                     if ch.lower() == self.current_sentence[i].lower():
                         has_case_error = True
-        
-        if has_case_error:
-            self.error_feedback_label.config(text="⚠ Case Mismatch! Check Caps Lock", fg="orange")
-        elif "incorrect" in self.input_textbox.tag_ranges("incorrect"):
-            self.error_feedback_label.config(text="❌ Character Error", fg="red")
+                    else:
+                        has_char_error = True
+
+
+        if has_char_error:
+            self.feedback_label.configure(text="❌ Character Error", text_color="#FF4C4C")
+        elif has_case_error:
+            self.feedback_label.configure(text="⚠ Case Mismatch!", text_color="#FFCC00")
         else:
-            self.error_feedback_label.config(text="")
-    
+            self.feedback_label.configure(text="✓ Typing...", text_color="#4CAF50")
+
+
     def check_result(self, event=None):
-        if not self.start_time:
-            return "break"
-        
-        self.timer_running = False # Stop the timer
-        end_time = time.time()
-        elapsed_time = end_time - self.start_time
-        
+        if not self.start_time: return
+       
+        self.timer_running = False
+        elapsed_time = time.time() - self.start_time
         typed_text = self.input_textbox.get("1.0", "end-1c")
-        
-        # Calculate WPM based on actual time elapsed or total characters
-        if typed_text.strip() == self.current_sentence:
-            word_count = len(self.current_sentence.split())
-            wpm = (word_count / elapsed_time) * 60
-            self.result_label.config(text=f"Well done! Speed: {wpm:.2f} WPM.", fg="green")
-        else:
-            # If time ran out or manual check, calculate partial WPM
-            chars_typed = len(typed_text)
-            wpm = (chars_typed / 5) / (elapsed_time / 60)
-            self.result_label.config(text=f"Time's up/Finished! Speed: {wpm:.2f} WPM.", fg="blue")
-        
-        self.input_textbox.config(state=tk.DISABLED) # Disable typing after result
+       
+        # Calculate WPM
+        chars_typed = len(typed_text)
+        wpm = (chars_typed / 5) / (elapsed_time / 60) if elapsed_time > 0 else 0
+       
+        self.result_label.configure(text=f"Test Finished! Speed: {wpm:.2f} WPM", text_color="#3B8ED0")
+        self.input_textbox.configure(state="disabled")
+        self.start_button.configure(state="normal")
+        self.result_button.configure(state="disabled", fg_color="gray")
         self.start_time = None
-        self.result_button.config(state=tk.DISABLED)
-        return "break"
+
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = TypingSpeedTest(root)
-    root.mainloop()
+    app = TypingSpeedTest()
+    app.mainloop()
+
