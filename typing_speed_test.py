@@ -15,7 +15,7 @@ class TypingSpeedTest:
     def __init__(self, root):
         self.root = root
         self.root.title("Typing Speed Test")
-        self.root.geometry("600x400")
+        self.root.geometry("600x450") # Increased height slightly for the new label
         self.root.resizable(False, False)
         
         self.start_time = None
@@ -31,7 +31,12 @@ class TypingSpeedTest:
         self.sentence_label.pack(pady=10)
         
         self.input_textbox = tk.Text(root, font=("Helvetica", 14), width=50, height=2)
-        self.input_textbox.pack(pady=10)
+        self.input_textbox.pack(pady=5)
+        
+        # --- NEW: Case Sensitivity Label ---
+        self.error_feedback_label = tk.Label(root, text="", font=("Helvetica", 10, "bold"), fg="orange")
+        self.error_feedback_label.pack()
+        
         self.input_textbox.bind("<Return>", self.check_result)
         self.input_textbox.bind("<KeyRelease>", self.validate_typing)
         self.input_textbox.bind("<KeyRelease>", self.enable_button_after_typing, add="+")
@@ -46,6 +51,7 @@ class TypingSpeedTest:
     
     def start_test(self):
         self.result_label.config(text="")
+        self.error_feedback_label.config(text="") # Clear feedback on restart
         self.current_sentence = random.choice(SENTENCES)
         self.sentence_label.config(text=self.current_sentence)
         self.input_textbox.delete("1.0", tk.END)
@@ -59,16 +65,33 @@ class TypingSpeedTest:
     def validate_typing(self, event=None):
         if not self.current_sentence:
             return
+        
         typed_text = self.input_textbox.get("1.0", "end-1c")
         self.input_textbox.tag_remove("correct", "1.0", "end")
         self.input_textbox.tag_remove("incorrect", "1.0", "end")
+        
+        has_case_error = False
+        
         for i, ch in enumerate(typed_text):
             start = f"1.0+{i}c"
             end = f"1.0+{i+1}c"
-            if i < len(self.current_sentence) and ch == self.current_sentence[i]:
-                self.input_textbox.tag_add("correct", start, end)
-            else:
-                self.input_textbox.tag_add("incorrect", start, end)
+            
+            if i < len(self.current_sentence):
+                if ch == self.current_sentence[i]:
+                    self.input_textbox.tag_add("correct", start, end)
+                else:
+                    self.input_textbox.tag_add("incorrect", start, end)
+                    # Check if the mistake is specifically a Case Mismatch
+                    if ch.lower() == self.current_sentence[i].lower():
+                        has_case_error = True
+        
+        # Update the feedback label based on detected errors
+        if has_case_error:
+            self.error_feedback_label.config(text="⚠ Case Mismatch! Check Caps Lock", fg="orange")
+        elif "incorrect" in self.input_textbox.tag_ranges("incorrect"):
+            self.error_feedback_label.config(text="❌ Character Error", fg="red")
+        else:
+            self.error_feedback_label.config(text="")
     
     def check_result(self, event=None):
         if not self.start_time:
@@ -83,6 +106,7 @@ class TypingSpeedTest:
             word_count = len(self.current_sentence.split())
             wpm = (word_count / elapsed_time) * 60
             self.result_label.config(text=f"Well done! Your typing speed is {wpm:.2f} WPM.", fg="green")
+            self.error_feedback_label.config(text="") # Clear on success
         else:
             self.result_label.config(text="Incorrect typing! Try again.", fg="red")
         
@@ -93,4 +117,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = TypingSpeedTest(root)
     root.mainloop()
-
