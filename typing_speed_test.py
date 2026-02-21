@@ -15,7 +15,7 @@ class TypingSpeedTest:
     def __init__(self, root):
         self.root = root
         self.root.title("Typing Speed Test")
-        self.root.geometry("600x450") # Increased height slightly for the new label
+        self.root.geometry("600x520") # Increased height to accommodate the new button
         self.root.resizable(False, False)
         
         self.start_time = None
@@ -33,31 +33,37 @@ class TypingSpeedTest:
         self.input_textbox = tk.Text(root, font=("Helvetica", 14), width=50, height=2)
         self.input_textbox.pack(pady=5)
         
-        # --- NEW: Case Sensitivity Label ---
         self.error_feedback_label = tk.Label(root, text="", font=("Helvetica", 10, "bold"), fg="orange")
         self.error_feedback_label.pack()
-        
+
         self.input_textbox.bind("<Return>", self.check_result)
         self.input_textbox.bind("<KeyRelease>", self.validate_typing)
         self.input_textbox.bind("<KeyRelease>", self.enable_button_after_typing, add="+")
         self.input_textbox.tag_configure("correct", foreground="green")
         self.input_textbox.tag_configure("incorrect", foreground="red")
         
+        # --- BUTTON SECTION ---
+        # The Start/Restart Button
         self.start_button = tk.Button(root, text="Start Test", font=("Helvetica", 14), command=self.start_test)
-        self.start_button.pack(pady=20)
+        self.start_button.pack(pady=10)
+
+        # NEW: Dedicated Display Results Button
+        self.result_button = tk.Button(root, text="Display Results", font=("Helvetica", 14), command=self.check_result, state=tk.DISABLED)
+        self.result_button.pack(pady=10)
         
         self.result_label = tk.Label(root, text="", font=("Helvetica", 14, "italic"), fg="green")
         self.result_label.pack(pady=10)
     
     def start_test(self):
         self.result_label.config(text="")
-        self.error_feedback_label.config(text="") # Clear feedback on restart
+        self.error_feedback_label.config(text="")
         self.current_sentence = random.choice(SENTENCES)
         self.sentence_label.config(text=self.current_sentence)
         self.input_textbox.delete("1.0", tk.END)
         self.input_textbox.focus()
         self.start_time = time.time()
         self.start_button.config(text="Restart Test", state=tk.DISABLED)
+        self.result_button.config(state=tk.NORMAL) # Enable result button when test starts
 
     def enable_button_after_typing(self, event=None):
         self.start_button.config(state=tk.NORMAL)
@@ -81,11 +87,9 @@ class TypingSpeedTest:
                     self.input_textbox.tag_add("correct", start, end)
                 else:
                     self.input_textbox.tag_add("incorrect", start, end)
-                    # Check if the mistake is specifically a Case Mismatch
                     if ch.lower() == self.current_sentence[i].lower():
                         has_case_error = True
         
-        # Update the feedback label based on detected errors
         if has_case_error:
             self.error_feedback_label.config(text="⚠ Case Mismatch! Check Caps Lock", fg="orange")
         elif "incorrect" in self.input_textbox.tag_ranges("incorrect"):
@@ -106,11 +110,12 @@ class TypingSpeedTest:
             word_count = len(self.current_sentence.split())
             wpm = (word_count / elapsed_time) * 60
             self.result_label.config(text=f"Well done! Your typing speed is {wpm:.2f} WPM.", fg="green")
-            self.error_feedback_label.config(text="") # Clear on success
+            self.error_feedback_label.config(text="")
         else:
             self.result_label.config(text="Incorrect typing! Try again.", fg="red")
         
         self.start_time = None
+        self.result_button.config(state=tk.DISABLED) # Disable until next test starts
         return "break"
 
 if __name__ == "__main__":
