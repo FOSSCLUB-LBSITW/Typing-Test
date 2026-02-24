@@ -23,6 +23,9 @@ class TypingSpeedTest:
         
         self.title_label = tk.Label(root, text="Typing Speed Test", font=("Helvetica", 18, "bold"))
         self.title_label.pack(pady=10)
+
+        self.timer_label = tk.Label(root, text="⏱ Time: 00:00", font=("Helvetica", 14, "bold"), fg="blue")
+        self.timer_label.pack(pady=5)
         
         self.instruction_label = tk.Label(root, text="Type the exact sentence below as fast as you can:", font=("Helvetica", 14))
         self.instruction_label.pack(pady=10)
@@ -41,7 +44,8 @@ class TypingSpeedTest:
         self.input_textbox.bind("<KeyRelease>", self.enable_button_after_typing, add="+")
         self.input_textbox.tag_configure("correct", foreground="green")
         self.input_textbox.tag_configure("incorrect", foreground="red")
-        
+        self.timer_running = False
+        self.elapsed_seconds = 0
         # --- BUTTON SECTION ---
         # The Start/Restart Button
         self.start_button = tk.Button(root, text="Start Test", font=("Helvetica", 14), command=self.start_test)
@@ -55,14 +59,16 @@ class TypingSpeedTest:
         self.result_label.pack(pady=10)
     
     def start_test(self):
+        self.timer_running = False
+        self.elapsed_seconds = 0
+        self.timer_label.config(text="⏱ Time: 00:00")
         self.result_label.config(text="")
         self.error_feedback_label.config(text="")
         self.current_sentence = random.choice(SENTENCES)
         self.sentence_label.config(text=self.current_sentence)
         self.input_textbox.delete("1.0", tk.END)
         self.input_textbox.focus()
-        self.start_time = time.time()
-        self.start_button.config(text="Restart Test", state=tk.DISABLED)
+        self.start_button.config(text="Restart Test", state=tk.NORMAL)
         self.result_button.config(state=tk.NORMAL) # Enable result button when test starts
 
     def enable_button_after_typing(self, event=None):
@@ -71,7 +77,12 @@ class TypingSpeedTest:
     def validate_typing(self, event=None):
         if not self.current_sentence:
             return
-        
+        if not self.timer_running and self.current_sentence:
+            self.start_time = time.time()
+            self.elapsed_seconds = 0
+            self.timer_label.config(text="⏱ Time: 00:00")
+            self.timer_running = True
+            self.update_timer()
         typed_text = self.input_textbox.get("1.0", "end-1c")
         self.input_textbox.tag_remove("correct", "1.0", "end")
         self.input_textbox.tag_remove("incorrect", "1.0", "end")
@@ -113,10 +124,17 @@ class TypingSpeedTest:
             self.error_feedback_label.config(text="")
         else:
             self.result_label.config(text="Incorrect typing! Try again.", fg="red")
-        
+        self.timer_running = False
         self.start_time = None
         self.result_button.config(state=tk.DISABLED) # Disable until next test starts
         return "break"
+    def update_timer(self):
+        if self.timer_running:
+            self.elapsed_seconds += 1
+            minutes = self.elapsed_seconds // 60
+            seconds = self.elapsed_seconds % 60
+            self.timer_label.config(text=f"⏱ Time: {minutes:02d}:{seconds:02d}")
+            self.root.after(1000, self.update_timer)
 
 if __name__ == "__main__":
     root = tk.Tk()
