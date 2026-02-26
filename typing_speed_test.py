@@ -32,6 +32,7 @@ class TypingSpeedTest(ctk.CTk):
         self.current_sentence = ""
         self.time_left = 60
         self.timer_running = False
+        self.scores = []
 
         # --- UI LAYOUT ---
         self.title_label = ctk.CTkLabel(self, text="Typing Speed Test", font=("Helvetica", 28, "bold"))
@@ -84,6 +85,17 @@ class TypingSpeedTest(ctk.CTk):
             fg_color="gray"
         )
         self.result_button.grid(row=0, column=1, padx=10)
+
+        self.scoreboard_button = ctk.CTkButton(
+            self.button_frame,
+            text="🏆 Scoreboard",
+            font=("Helvetica", 14, "bold"),
+            command=self.show_scoreboard,
+            height=40,
+            fg_color="#5A5A8A",
+            hover_color="#3D3D6B"
+        )
+        self.scoreboard_button.grid(row=0, column=2, padx=10)
 
         self.result_label = ctk.CTkLabel(self, text="", font=("Helvetica", 18, "italic"))
         self.result_label.pack(pady=10)
@@ -209,6 +221,35 @@ class TypingSpeedTest(ctk.CTk):
         self.start_button.configure(state="normal")
         self.result_button.configure(state="disabled", fg_color="gray")
         self.start_time = None
+
+        # Update in-memory scoreboard (top 5)
+        self.scores.append(round(wpm, 2))
+        self.scores.sort(reverse=True)
+        self.scores = self.scores[:5]
+
+    def show_scoreboard(self):
+        win = ctk.CTkToplevel(self)
+        win.title("Scoreboard")
+        win.geometry("300x320")
+        win.resizable(False, False)
+        win.grab_set()
+
+        ctk.CTkLabel(win, text="🏆 Top 5 Scores", font=("Helvetica", 20, "bold")).pack(pady=16)
+
+        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+
+        if not self.scores:
+            ctk.CTkLabel(win, text="No scores yet.\nComplete a test to see results!",
+                         font=("Helvetica", 14), text_color="gray", justify="center").pack(pady=20)
+        else:
+            for i, score in enumerate(self.scores):
+                ctk.CTkLabel(
+                    win,
+                    text=f"{medals[i]}  {score:.2f} WPM",
+                    font=("Helvetica", 16)
+                ).pack(pady=6)
+
+        ctk.CTkButton(win, text="Close", command=win.destroy, height=36).pack(pady=16)
 
 if __name__ == "__main__":
     app = TypingSpeedTest()
