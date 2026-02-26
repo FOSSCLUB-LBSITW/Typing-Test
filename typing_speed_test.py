@@ -20,6 +20,15 @@ FALLBACK_SENTENCES = [
 
 QUOTE_API_URL = "http://api.quotable.io/random"
 
+# Predefined color themes: accent, bg, text_on_quote, button_label
+THEMES = {
+    "Ocean":    {"accent": "#3B8ED0", "bg": "#1a1a2e", "accent_hover": "#2775b3"},
+    "Sunset":   {"accent": "#E05C5C", "bg": "#2b1a1a", "accent_hover": "#b84444"},
+    "Forest":   {"accent": "#4CAF50", "bg": "#1a2b1a", "accent_hover": "#388E3C"},
+    "Candy":    {"accent": "#D45FBF", "bg": "#2b1a2b", "accent_hover": "#a8429b"},
+    "Midnight": {"accent": "#A78BFA", "bg": "#0f0f1a", "accent_hover": "#7c5cbf"},
+}
+
 class TypingSpeedTest(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -34,6 +43,7 @@ class TypingSpeedTest(ctk.CTk):
         self.timer_running = False
         self.scores = []
         self.mode = "60s"  # "60s" or "15s"
+        self.current_theme = "Ocean"  # default theme
 
         # --- UI LAYOUT ---
         self.title_label = ctk.CTkLabel(self, text="Typing Speed Test", font=("Helvetica", 28, "bold"))
@@ -129,20 +139,69 @@ class TypingSpeedTest(ctk.CTk):
         self.result_label = ctk.CTkLabel(self, text="", font=("Helvetica", 18, "italic"))
         self.result_label.pack(pady=10)
 
+        # Theme Selector
+        self.theme_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.theme_frame.pack(pady=(0, 6))
+        ctk.CTkLabel(self.theme_frame, text="Theme:", font=("Helvetica", 12, "bold")).grid(row=0, column=0, padx=(0, 6))
+        self.theme_buttons = {}
+        for col, (name, t) in enumerate(THEMES.items(), start=1):
+            btn = ctk.CTkButton(
+                self.theme_frame,
+                text=name,
+                font=("Helvetica", 11, "bold"),
+                command=lambda n=name: self.apply_theme(n),
+                height=28,
+                width=80,
+                fg_color=t["accent"],
+                hover_color=t["accent_hover"],
+                corner_radius=14
+            )
+            btn.grid(row=0, column=col, padx=4)
+            self.theme_buttons[name] = btn
+
         # Fallback pool (shuffled), used only when API is unavailable
         self.fallback_pool = FALLBACK_SENTENCES.copy()
         random.shuffle(self.fallback_pool)
 
+        # Apply default theme
+        self.apply_theme("Ocean")
+
+    def apply_theme(self, name):
+        """Apply a named colour theme to all themed widgets."""
+        self.current_theme = name
+        t = THEMES[name]
+        accent = t["accent"]
+        hover  = t["accent_hover"]
+        bg     = t["bg"]
+
+        self.configure(fg_color=bg)
+        self.timer_label.configure(text_color=accent)
+        self.result_label.configure(text_color=accent)
+        self.start_button.configure(fg_color=accent, hover_color=hover)
+        self.scoreboard_button.configure(fg_color="#5A5A8A", hover_color="#3D3D6B")
+        # Mode buttons: re-highlight active one
+        self.btn_60s.configure(
+            fg_color=accent if self.mode == "60s" else "gray",
+            hover_color=hover if self.mode == "60s" else "#555555"
+        )
+        self.btn_15s.configure(
+            fg_color=accent if self.mode == "15s" else "gray",
+            hover_color=hover if self.mode == "15s" else "#555555"
+        )
+
     def set_mode(self, mode):
         """Switch between '60s' and '15s' modes (only when not mid-test)."""
         if self.timer_running:
-            return  # Ignore mode switch during an active test
+            return
         self.mode = mode
+        t = THEMES[self.current_theme]
+        accent, hover = t["accent"], t["accent_hover"]
         duration = 60 if mode == "60s" else 15
-        self.timer_label.configure(text=f"Time Remaining: {duration}s", text_color="#3B8ED0")
-        # Highlight active mode button
-        self.btn_60s.configure(fg_color="#3B8ED0" if mode == "60s" else "gray")
-        self.btn_15s.configure(fg_color="#3B8ED0" if mode == "15s" else "gray")
+        self.timer_label.configure(text=f"Time Remaining: {duration}s", text_color=accent)
+        self.btn_60s.configure(fg_color=accent if mode == "60s" else "gray",
+                               hover_color=hover if mode == "60s" else "#555555")
+        self.btn_15s.configure(fg_color=accent if mode == "15s" else "gray",
+                               hover_color=hover if mode == "15s" else "#555555")
 
     def fetch_quote(self):
         """Fetch a random quote from the API. Returns the quote string or None on failure."""
@@ -198,11 +257,13 @@ class TypingSpeedTest(ctk.CTk):
         duration = 60 if self.mode == "60s" else 15
         self.time_left = duration
         self.timer_running = True
-        self.timer_label.configure(text=f"Time Remaining: {duration}s", text_color="#3B8ED0")
+        accent = THEMES[self.current_theme]["accent"]
+        self.timer_label.configure(text=f"Time Remaining: {duration}s", text_color=accent)
         self.start_time = time.time()
 
         # Update buttons
-        self.result_button.configure(state="normal", fg_color="#3B8ED0")
+        accent = THEMES[self.current_theme]["accent"]
+        self.result_button.configure(state="normal", fg_color=accent)
 
         # Start timer
         self.update_timer()
@@ -258,7 +319,8 @@ class TypingSpeedTest(ctk.CTk):
         chars_typed = len(typed_text)
         wpm = (chars_typed / 5) / (elapsed_time / 60) if elapsed_time > 0 else 0
 
-        self.result_label.configure(text=f"Test Finished! Speed: {wpm:.2f} WPM", text_color="#3B8ED0")
+        accent = THEMES[self.current_theme]["accent"]
+        self.result_label.configure(text=f"Test Finished! Speed: {wpm:.2f} WPM", text_color=accent)
         self.input_textbox.configure(state="disabled")
         self.start_button.configure(state="normal")
         self.result_button.configure(state="disabled", fg_color="gray")
