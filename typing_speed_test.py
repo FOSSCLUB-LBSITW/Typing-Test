@@ -312,6 +312,7 @@ class TypingSpeedTest(ctk.CTk):
         if not self.start_time: return
 
         self.timer_running = False
+        self.feedback_label.configure(text="")  # Clear typing feedback
         elapsed_time = time.time() - self.start_time
         typed_text = self.input_textbox.get("1.0", "end-1c")
 
