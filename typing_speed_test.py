@@ -1,18 +1,24 @@
 import customtkinter as ctk
 import random
 import time
+import threading
+import urllib.request
+import json
 
 # --- Theme Configuration ---
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-SENTENCES = [
-    "Technology is the most effective way to change the world",
-    "Innovation is the ability to see change as an opportunity -not a threat",
-    "Artificial Intelligence is not a threat to creativity; it's a catalyst for innovation.",
+# Fallback sentences used when the API is unreachable
+FALLBACK_SENTENCES = [
+    "Technology is the most effective way to change the world.",
+    "Innovation is the ability to see change as an opportunity, not a threat.",
+    "Artificial Intelligence is not a threat to creativity; it is a catalyst for innovation.",
     "Data is the canvas, and AI is the brush that paints the picture of insights.",
     "Artificial Intelligence: where innovation meets computation in the pursuit of a smarter tomorrow."
 ]
+
+QUOTE_API_URL = "http://api.quotable.io/random"
 
 class TypingSpeedTest(ctk.CTk):
     def __init__(self):
@@ -82,27 +88,59 @@ class TypingSpeedTest(ctk.CTk):
         self.result_label = ctk.CTkLabel(self, text="", font=("Helvetica", 18, "italic"))
         self.result_label.pack(pady=10)
 
-        # Available sentences
-        self.available_sentences = SENTENCES.copy()
-        random.shuffle(self.available_sentences)
+        # Fallback pool (shuffled), used only when API is unavailable
+        self.fallback_pool = FALLBACK_SENTENCES.copy()
+        random.shuffle(self.fallback_pool)
+
+    def fetch_quote(self):
+        """Fetch a random quote from the API. Returns the quote string or None on failure."""
+        try:
+            with urllib.request.urlopen(QUOTE_API_URL, timeout=5) as response:
+                data = json.loads(response.read().decode())
+                return data.get("content", "").strip()
+        except Exception:
+            return None
 
     def start_test(self):
         # --- Reset everything for a new test ---
         self.result_label.configure(text="")
         self.feedback_label.configure(text="")
 
-        # Clear input field properly
+        # Clear input field and disable it while loading
+        self.input_textbox.configure(state="normal")
+        self.input_textbox.delete("1.0", "end")
+        self.input_textbox.configure(state="disabled")
+
+        # Show loading state
+        self.sentence_label.configure(text="Loading quote...", text_color="gray")
+        self.start_button.configure(state="disabled")
+        self.result_button.configure(state="disabled", fg_color="gray")
+
+        # Fetch the quote in a background thread to keep UI responsive
+        threading.Thread(target=self._load_quote_and_begin, daemon=True).start()
+
+    def _load_quote_and_begin(self):
+        """Background thread: fetch quote, then schedule UI update on main thread."""
+        quote = self.fetch_quote()
+        if not quote:
+            # Fallback to built-in sentences
+            if not self.fallback_pool:
+                self.fallback_pool = FALLBACK_SENTENCES.copy()
+                random.shuffle(self.fallback_pool)
+            quote = self.fallback_pool.pop()
+        # Schedule the rest of the setup back on the main thread
+        self.after(0, lambda q=quote: self._begin_test(q))
+
+    def _begin_test(self, sentence):
+        """Called on the main thread once the quote is ready."""
+        self.current_sentence = sentence
+        self.sentence_label.configure(text=self.current_sentence, text_color="white")
+
+        # Re-enable input and focus
         self.input_textbox.configure(state="normal")
         self.input_textbox.delete("1.0", "end")
         self.input_textbox.focus()
         self.input_textbox.update()
-
-        # Pick new sentence
-        if not self.available_sentences:
-            self.available_sentences = SENTENCES.copy()
-            random.shuffle(self.available_sentences)
-        self.current_sentence = self.available_sentences.pop()
-        self.sentence_label.configure(text=self.current_sentence, text_color="white")
 
         # Reset timer
         self.time_left = 60
@@ -111,7 +149,6 @@ class TypingSpeedTest(ctk.CTk):
         self.start_time = time.time()
 
         # Update buttons
-        self.start_button.configure(state="disabled")
         self.result_button.configure(state="normal", fg_color="#3B8ED0")
 
         # Start timer
