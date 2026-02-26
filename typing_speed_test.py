@@ -33,6 +33,7 @@ class TypingSpeedTest(ctk.CTk):
         self.time_left = 60
         self.timer_running = False
         self.scores = []
+        self.mode = "60s"  # "60s" or "15s"
 
         # --- UI LAYOUT ---
         self.title_label = ctk.CTkLabel(self, text="Typing Speed Test", font=("Helvetica", 28, "bold"))
@@ -62,9 +63,37 @@ class TypingSpeedTest(ctk.CTk):
         self.feedback_label = ctk.CTkLabel(self, text="", font=("Helvetica", 12, "bold"))
         self.feedback_label.pack()
 
+        # Mode Selector
+        self.mode_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.mode_frame.pack(pady=(10, 0))
+
+        self.btn_60s = ctk.CTkButton(
+            self.mode_frame,
+            text="⏱ 60s Mode",
+            font=("Helvetica", 13, "bold"),
+            command=lambda: self.set_mode("60s"),
+            height=34,
+            width=130,
+            fg_color="#3B8ED0",
+            hover_color="#2775b3"
+        )
+        self.btn_60s.grid(row=0, column=0, padx=6)
+
+        self.btn_15s = ctk.CTkButton(
+            self.mode_frame,
+            text="⚡ 15s Mode",
+            font=("Helvetica", 13, "bold"),
+            command=lambda: self.set_mode("15s"),
+            height=34,
+            width=130,
+            fg_color="gray",
+            hover_color="#555555"
+        )
+        self.btn_15s.grid(row=0, column=1, padx=6)
+
         # Button Container
         self.button_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.button_frame.pack(pady=20)
+        self.button_frame.pack(pady=10)
 
         self.start_button = ctk.CTkButton(
             self.button_frame,
@@ -103,6 +132,17 @@ class TypingSpeedTest(ctk.CTk):
         # Fallback pool (shuffled), used only when API is unavailable
         self.fallback_pool = FALLBACK_SENTENCES.copy()
         random.shuffle(self.fallback_pool)
+
+    def set_mode(self, mode):
+        """Switch between '60s' and '15s' modes (only when not mid-test)."""
+        if self.timer_running:
+            return  # Ignore mode switch during an active test
+        self.mode = mode
+        duration = 60 if mode == "60s" else 15
+        self.timer_label.configure(text=f"Time Remaining: {duration}s", text_color="#3B8ED0")
+        # Highlight active mode button
+        self.btn_60s.configure(fg_color="#3B8ED0" if mode == "60s" else "gray")
+        self.btn_15s.configure(fg_color="#3B8ED0" if mode == "15s" else "gray")
 
     def fetch_quote(self):
         """Fetch a random quote from the API. Returns the quote string or None on failure."""
@@ -154,10 +194,11 @@ class TypingSpeedTest(ctk.CTk):
         self.input_textbox.focus()
         self.input_textbox.update()
 
-        # Reset timer
-        self.time_left = 60
+        # Reset timer based on selected mode
+        duration = 60 if self.mode == "60s" else 15
+        self.time_left = duration
         self.timer_running = True
-        self.timer_label.configure(text="Time Remaining: 60s", text_color="#3B8ED0")
+        self.timer_label.configure(text=f"Time Remaining: {duration}s", text_color="#3B8ED0")
         self.start_time = time.time()
 
         # Update buttons
@@ -170,7 +211,8 @@ class TypingSpeedTest(ctk.CTk):
         if self.time_left > 0 and self.timer_running:
             self.time_left -= 1
             self.timer_label.configure(text=f"Time Remaining: {self.time_left}s")
-            if self.time_left <= 10:
+            red_zone = 5 if self.mode == "15s" else 10
+            if self.time_left <= red_zone:
                 self.timer_label.configure(text_color="#FF4C4C")
             self.after(1000, self.update_timer)
         elif self.time_left == 0:
