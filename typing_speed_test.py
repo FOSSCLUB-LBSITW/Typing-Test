@@ -11,18 +11,25 @@ SENTENCES = [
     "Artificial Intelligence: where innovation meets computation in the pursuit of a smarter tomorrow."
 ]
 
+TEST_DURATION = 60
+
 class TypingSpeedTest:
     def __init__(self, root):
         self.root = root
         self.root.title("Typing Speed Test")
-        self.root.geometry("600x520") # Increased height to accommodate the new button
+        self.root.geometry("600x560") 
         self.root.resizable(False, False)
         
         self.start_time = None
         self.current_sentence = ""
+        self.time_left = TEST_DURATION
+        self.timer_id = None
         
         self.title_label = tk.Label(root, text="Typing Speed Test", font=("Helvetica", 18, "bold"))
         self.title_label.pack(pady=10)
+
+        self.timer_label = tk.Label(root, text=f"Time Left: {self.time_left}s", font=("Helvetica", 14, "bold"), fg="blue")
+        self.timer_label.pack(pady=5)
         
         self.instruction_label = tk.Label(root, text="Type the exact sentence below as fast as you can:", font=("Helvetica", 14))
         self.instruction_label.pack(pady=10)
@@ -43,11 +50,9 @@ class TypingSpeedTest:
         self.input_textbox.tag_configure("incorrect", foreground="red")
         
         # --- BUTTON SECTION ---
-        # The Start/Restart Button
         self.start_button = tk.Button(root, text="Start Test", font=("Helvetica", 14), command=self.start_test)
         self.start_button.pack(pady=10)
 
-        # NEW: Dedicated Display Results Button
         self.result_button = tk.Button(root, text="Display Results", font=("Helvetica", 14), command=self.check_result, state=tk.DISABLED)
         self.result_button.pack(pady=10)
         
@@ -55,15 +60,31 @@ class TypingSpeedTest:
         self.result_label.pack(pady=10)
     
     def start_test(self):
+        if self.timer_id:
+            self.root.after_cancel(self.timer_id)
+            
         self.result_label.config(text="")
         self.error_feedback_label.config(text="")
         self.current_sentence = random.choice(SENTENCES)
         self.sentence_label.config(text=self.current_sentence)
         self.input_textbox.delete("1.0", tk.END)
         self.input_textbox.focus()
+        
+        self.time_left = TEST_DURATION
+        self.timer_label.config(text=f"Time Left: {self.time_left}s")
         self.start_time = time.time()
+        
         self.start_button.config(text="Restart Test", state=tk.DISABLED)
-        self.result_button.config(state=tk.NORMAL) # Enable result button when test starts
+        self.result_button.config(state=tk.NORMAL)
+        self.update_timer()
+
+    def update_timer(self):
+        if self.time_left > 0:
+            self.time_left -= 1
+            self.timer_label.config(text=f"Time Left: {self.time_left}s")
+            self.timer_id = self.root.after(1000, self.update_timer)
+        else:
+            self.check_result(timeout=True)
 
     def enable_button_after_typing(self, event=None):
         self.start_button.config(state=tk.NORMAL)
@@ -97,13 +118,20 @@ class TypingSpeedTest:
         else:
             self.error_feedback_label.config(text="")
     
-    def check_result(self, event=None):
+    def check_result(self, event=None, timeout=False):
         if not self.start_time:
             messagebox.showwarning("Warning", "Click 'Start Test' first!")
             return "break"
         
-        end_time = time.time()
-        elapsed_time = end_time - self.start_time
+        if self.timer_id:
+            self.root.after_cancel(self.timer_id)
+            self.timer_id = None
+
+        if timeout:
+            elapsed_time = TEST_DURATION  # Fix: Use fixed duration for denominator if timer expires
+        else:
+            end_time = time.time()
+            elapsed_time = end_time - self.start_time
         
         typed_text = self.input_textbox.get("1.0", "end-1c")
         if typed_text.strip() == self.current_sentence:
@@ -115,7 +143,7 @@ class TypingSpeedTest:
             self.result_label.config(text="Incorrect typing! Try again.", fg="red")
         
         self.start_time = None
-        self.result_button.config(state=tk.DISABLED) # Disable until next test starts
+        self.result_button.config(state=tk.DISABLED)
         return "break"
 
 if __name__ == "__main__":
