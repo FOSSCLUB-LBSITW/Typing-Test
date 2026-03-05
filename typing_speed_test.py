@@ -22,7 +22,7 @@ class TypingSpeedTest(ctk.CTk):
         super().__init__()
 
         self.title("Typing Speed Test")
-        self.geometry("700x500")
+        self.geometry("700x520")
 
         self.current_sentence = ""
         self.start_time = None
@@ -32,36 +32,52 @@ class TypingSpeedTest(ctk.CTk):
         self.countdown = 3
 
         # TITLE
-        self.title_label = ctk.CTkLabel(self,
-                                        text="Typing Speed Test",
-                                        font=("Helvetica", 28, "bold"))
+        self.title_label = ctk.CTkLabel(
+            self,
+            text="Typing Speed Test",
+            font=("Helvetica", 30, "bold")
+        )
         self.title_label.pack(pady=20)
 
         # TIMER
-        self.timer_label = ctk.CTkLabel(self,
-                                        text="Time Remaining: 60s",
-                                        font=("Helvetica", 16, "bold"))
+        self.timer_label = ctk.CTkLabel(
+            self,
+            text="Time Remaining: 60s",
+            font=("Helvetica", 18, "bold")
+        )
         self.timer_label.pack()
 
-        # SENTENCE
-        self.sentence_label = ctk.CTkLabel(self,
-                                           text="Press Start to begin",
-                                           wraplength=600,
-                                           font=("Helvetica", 18))
-        self.sentence_label.pack(pady=20)
+        # SENTENCE FRAME (for better visibility)
+        self.sentence_frame = ctk.CTkFrame(self, width=620, height=100)
+        self.sentence_frame.pack(pady=20)
+        self.sentence_frame.pack_propagate(False)
+
+        # SENTENCE LABEL
+        self.sentence_label = ctk.CTkLabel(
+            self.sentence_frame,
+            text="Press Start to begin",
+            wraplength=580,
+            justify="left",
+            font=("Helvetica", 20, "bold")
+        )
+        self.sentence_label.pack(padx=10, pady=10)
 
         # INPUT BOX
-        self.input_textbox = ctk.CTkTextbox(self,
-                                            width=600,
-                                            height=120,
-                                            font=("Helvetica", 16))
+        self.input_textbox = ctk.CTkTextbox(
+            self,
+            width=600,
+            height=120,
+            font=("Helvetica", 16)
+        )
         self.input_textbox.pack(pady=10)
         self.input_textbox.configure(state="disabled")
 
         # RESULT
-        self.result_label = ctk.CTkLabel(self,
-                                         text="",
-                                         font=("Helvetica", 18))
+        self.result_label = ctk.CTkLabel(
+            self,
+            text="",
+            font=("Helvetica", 20, "bold")
+        )
         self.result_label.pack(pady=10)
 
         # BUTTON FRAME
@@ -69,23 +85,29 @@ class TypingSpeedTest(ctk.CTk):
         self.button_frame.pack(pady=10)
 
         # START BUTTON
-        self.start_button = ctk.CTkButton(self.button_frame,
-                                          text="Start Test",
-                                          command=self.start_test)
+        self.start_button = ctk.CTkButton(
+            self.button_frame,
+            text="Start Test",
+            command=self.start_test
+        )
         self.start_button.grid(row=0, column=0, padx=10)
 
         # PAUSE BUTTON
-        self.pause_button = ctk.CTkButton(self.button_frame,
-                                          text="Pause",
-                                          command=self.toggle_pause,
-                                          state="disabled")
+        self.pause_button = ctk.CTkButton(
+            self.button_frame,
+            text="Pause",
+            command=self.toggle_pause,
+            state="disabled"
+        )
         self.pause_button.grid(row=0, column=1, padx=10)
 
         # RESULT BUTTON
-        self.result_button = ctk.CTkButton(self.button_frame,
-                                           text="Check Result",
-                                           command=self.check_result,
-                                           state="disabled")
+        self.result_button = ctk.CTkButton(
+            self.button_frame,
+            text="Check Result",
+            command=self.check_result,
+            state="disabled"
+        )
         self.result_button.grid(row=0, column=2, padx=10)
 
     # ======================
