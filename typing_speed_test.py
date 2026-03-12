@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import random
 import time
+import winsound
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -47,7 +48,7 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.timer_label.pack()
 
-        # SENTENCE FRAME (for better visibility)
+        # SENTENCE FRAME
         self.sentence_frame = ctk.CTkFrame(self, width=620, height=100)
         self.sentence_frame.pack(pady=20)
         self.sentence_frame.pack_propagate(False)
@@ -71,6 +72,9 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.input_textbox.pack(pady=10)
         self.input_textbox.configure(state="disabled")
+
+        # bind key press for sound
+        self.input_textbox.bind("<Key>", self.play_typing_sound)
 
         # RESULT
         self.result_label = ctk.CTkLabel(
@@ -211,6 +215,30 @@ class TypingSpeedTest(ctk.CTk):
             self.update_timer()
 
     # ======================
+    # PLAY TYPING SOUND
+    # ======================
+    def play_typing_sound(self, event):
+
+        if not self.timer_running:
+            return
+
+        typed = self.input_textbox.get("1.0", "end-1c")
+        index = len(typed)
+
+        if event.keysym == "BackSpace":
+            winsound.Beep(500, 40)
+            return
+
+        if index < len(self.current_sentence):
+
+            expected_char = self.current_sentence[index]
+
+            if event.char == expected_char:
+                winsound.Beep(800, 30)  # correct key
+            else:
+                winsound.Beep(300, 80)  # wrong key
+
+    # ======================
     # RESULT
     # ======================
     def check_result(self):
@@ -219,6 +247,8 @@ class TypingSpeedTest(ctk.CTk):
             return
 
         self.timer_running = False
+
+        winsound.Beep(1200, 300)  # completion sound
 
         typed_text = self.input_textbox.get("1.0", "end-1c")
 
