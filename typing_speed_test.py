@@ -1,10 +1,18 @@
 import customtkinter as ctk
 import random
 import time
-import winsound
 import json
 import os
 from datetime import datetime, timedelta
+
+# winsound is Windows-only; fail gracefully on other platforms
+try:
+    import winsound
+    def beep(freq, dur):
+        winsound.Beep(freq, dur)
+except ImportError:
+    def beep(freq, dur):
+        pass  # Silent fallback on macOS / Linux
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -29,7 +37,6 @@ def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
             return json.load(f)
-
     return {
         "daily_streak": 0,
         "last_practice_date": "",
@@ -84,7 +91,6 @@ class TypingSpeedTest(ctk.CTk):
         self.sentence_frame.pack(pady=20)
         self.sentence_frame.pack_propagate(False)
 
-        # Use a CTkTextbox for the sentence to allow highlighting
         self.sentence_textbox = ctk.CTkTextbox(
             self.sentence_frame,
             wrap="word",
@@ -96,7 +102,6 @@ class TypingSpeedTest(ctk.CTk):
         self.sentence_textbox.insert("1.0", "Press Enter or click Start to begin")
         self.sentence_textbox.configure(state="disabled")
 
-        # Configure tags for correct and incorrect characters
         self.sentence_textbox.tag_config("correct", foreground="green")
         self.sentence_textbox.tag_config("incorrect", foreground="red")
 
@@ -111,6 +116,8 @@ class TypingSpeedTest(ctk.CTk):
         self.input_textbox.configure(state="disabled")
 
         self.input_textbox.bind("<KeyRelease>", self.handle_typing)
+        # Suppress newline insertion so Enter doesn't add a blank line while typing
+        self.input_textbox.bind("<Return>", lambda e: "break")
 
         # RESULT LABEL
         self.result_label = ctk.CTkLabel(
@@ -147,16 +154,15 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.pause_button.grid(row=0, column=1, padx=10)
 
-        # Bind the Enter key to start the test
-        self.bind("<Return>", self.handle_enter_key)
+        # Bind Enter to start the test when not typing
+        self.bind("<Return>", self.handle_enter)
 
     # ======================
     # HANDLE ENTER KEY
     # ======================
 
-    def handle_enter_key(self, event):
-        # Start the test if it's not already running
-        if not self.timer_running:
+    def handle_enter(self, event=None):
+        if self.start_button.cget("state") == "normal":
             self.start_test()
 
     # ======================
@@ -183,6 +189,8 @@ class TypingSpeedTest(ctk.CTk):
         self.countdown = 3
         self.input_textbox.configure(state="disabled")
         self.start_button.configure(state="disabled")
+        # Reset pause button label in case it was left as "Resume"
+        self.pause_button.configure(text="Pause")
 
         self.sentence_textbox.configure(state="normal")
         self.sentence_textbox.delete("1.0", "end")
@@ -215,7 +223,7 @@ class TypingSpeedTest(ctk.CTk):
 
     def begin_test(self):
         self.current_sentence = random.choice(SENTENCES)
-        self.update_sentence_display()  # Initial display of the sentence
+        self.update_sentence_display()
 
         self.input_textbox.configure(state="normal")
         self.input_textbox.delete("1.0", "end")
@@ -231,22 +239,21 @@ class TypingSpeedTest(ctk.CTk):
         self.update_timer()
 
     # ======================
-    # TIMER
+    # TIMER  (wall-clock based to avoid drift)
     # ======================
 
     def update_timer(self):
-        if not self.timer_running:
+        if not self.timer_running or self.paused:
             return
 
-        if not self.paused:
-            if self.time_left > 0:
-                self.timer_label.configure(
-                    text=f"Time Remaining: {self.time_left}s"
-                )
-                self.time_left -= 1
-                self.after_id = self.after(1000, self.update_timer)
-            else:
-                self.check_result()
+        elapsed = int(time.time() - self.start_time)
+        remaining = max(0, TEST_DURATION - elapsed)
+        self.timer_label.configure(text=f"Time Remaining: {remaining}s")
+
+        if remaining == 0:
+            self.check_result()
+        else:
+            self.after_id = self.after(500, self.update_timer)  # poll twice/sec for accuracy
 
     # ======================
     # PAUSE
@@ -259,12 +266,14 @@ class TypingSpeedTest(ctk.CTk):
         self.paused = not self.paused
         if self.paused:
             self.pause_button.configure(text="Resume")
+            self.pause_start = time.time()
             if self.after_id:
                 self.after_cancel(self.after_id)
         else:
             self.pause_button.configure(text="Pause")
-            # Recalculate start_time to account for the pause
-            self.start_time = time.time() - (TEST_DURATION - self.time_left)
+            # Shift start_time forward by the length of the pause so elapsed is correct
+            pause_duration = time.time() - self.pause_start
+            self.start_time += pause_duration
             self.update_timer()
 
     # ======================
@@ -275,16 +284,15 @@ class TypingSpeedTest(ctk.CTk):
         if not self.timer_running or self.paused:
             return
 
-        # Play sound for feedback
         if event.keysym == "BackSpace":
-            winsound.Beep(500, 40)
-        else:
-            winsound.Beep(800, 30)
+            beep(500, 40)
+        elif event.keysym not in ("Return", "Shift_L", "Shift_R", "Control_L",
+                                   "Control_R", "Alt_L", "Alt_R"):
+            beep(800, 30)
 
         self.update_sentence_display()
 
         typed_text = self.input_textbox.get("1.0", "end-1c")
-        # Automatically end test when the sentence is typed correctly
         if typed_text == self.current_sentence:
             self.check_result()
 
@@ -299,17 +307,12 @@ class TypingSpeedTest(ctk.CTk):
         typed_text = self.input_textbox.get("1.0", "end-1c")
 
         for i, char in enumerate(self.current_sentence):
+            tag = ""
             if i < len(typed_text):
-                if typed_text[i] == char:
-                    self.sentence_textbox.insert(f"1.{i}", char, "correct")
-                else:
-                    self.sentence_textbox.insert(f"1.{i}", char, "incorrect")
-            else:
-                # Insert remaining characters without a tag
-                self.sentence_textbox.insert(f"1.{i}", char)
+                tag = "correct" if typed_text[i] == char else "incorrect"
+            self.sentence_textbox.insert(f"1.{i}", char, tag if tag else ())
 
         self.sentence_textbox.configure(state="disabled")
-
 
     # ======================
     # UPDATE STREAKS
@@ -353,19 +356,18 @@ class TypingSpeedTest(ctk.CTk):
             self.after_id = None
 
         if not self.timer_running:
-            return
+            return  # Guard against double-fire (timer expiry + sentence completion)
 
         self.timer_running = False
-        winsound.Beep(1200, 300)
+        beep(1200, 300)
 
         typed_text = self.input_textbox.get("1.0", "end-1c")
         elapsed_time = time.time() - self.start_time
 
-        # Calculate WPM based on correctly typed characters
-        correct_chars = 0
-        for i, char in enumerate(typed_text):
-            if i < len(self.current_sentence) and self.current_sentence[i] == char:
-                correct_chars += 1
+        correct_chars = sum(
+            1 for i, char in enumerate(typed_text)
+            if i < len(self.current_sentence) and self.current_sentence[i] == char
+        )
 
         wpm = (correct_chars / 5) / (elapsed_time / 60) if elapsed_time > 0 else 0
 
@@ -378,7 +380,6 @@ class TypingSpeedTest(ctk.CTk):
         self.pause_button.configure(state="disabled")
         self.start_button.configure(state="normal")
 
-        # Reset the sentence display for the next round
         self.sentence_textbox.configure(state="normal")
         self.sentence_textbox.delete("1.0", "end")
         self.sentence_textbox.insert("1.0", "Press Enter or click Start to begin")
