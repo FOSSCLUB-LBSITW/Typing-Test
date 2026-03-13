@@ -410,6 +410,7 @@ class TypingSpeedTest(ctk.CTk):
         self.input_textbox.configure(state="disabled")
 
         self.input_textbox.bind("<KeyRelease>", self.handle_typing)
+        # Suppress newline insertion so Enter doesn't add a blank line
         self.input_textbox.bind("<Return>", lambda e: "break")
 
         # ── RESULT LABEL ───────────────────────────────────────
@@ -443,6 +444,7 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.pause_button.grid(row=0, column=1, padx=10)
 
+        # Bind Enter to start the test when not typing
         self.bind("<Return>", self.handle_enter)
 
     # ======================
@@ -551,6 +553,7 @@ class TypingSpeedTest(ctk.CTk):
         if self.timer_running:
             return
 
+        # Read user-selected duration
         self.test_duration = DURATION_OPTIONS.get(
             self.duration_var.get(), DEFAULT_DURATION
         )
@@ -657,6 +660,7 @@ class TypingSpeedTest(ctk.CTk):
                 self.after_cancel(self.live_wpm_after_id)
         else:
             self.pause_button.configure(text="Pause")
+            # Shift start_time forward by the length of the pause
             pause_duration = time.time() - self.pause_start
             self.start_time += pause_duration
             self.update_timer()
@@ -679,6 +683,7 @@ class TypingSpeedTest(ctk.CTk):
             "Return", "Shift_L", "Shift_R",
             "Control_L", "Control_R", "Alt_L", "Alt_R",
         ):
+            # Per-character correct/incorrect sound
             if index <= len(self.current_sentence) and index > 0:
                 expected = self.current_sentence[index - 1]
                 if typed[-1] == expected:
@@ -688,6 +693,7 @@ class TypingSpeedTest(ctk.CTk):
 
         self.update_sentence_display()
 
+        # Check if sentence is completed
         if typed.strip() == self.current_sentence.strip():
             self.check_result()
 
@@ -759,7 +765,7 @@ class TypingSpeedTest(ctk.CTk):
             self.live_wpm_after_id = None
 
         if not self.timer_running:
-            return
+            return  # Guard against double-fire
 
         self.timer_running = False
         beep(1200, 300)
