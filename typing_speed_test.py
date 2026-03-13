@@ -410,6 +410,7 @@ class TypingSpeedTest(ctk.CTk):
         self.input_textbox.configure(state="disabled")
 
         self.input_textbox.bind("<KeyRelease>", self.handle_typing)
+        # Suppress newline insertion so Enter doesn't add a blank line while typing
         self.input_textbox.bind("<Return>", lambda e: "break")
 
         # ── RESULT LABEL ───────────────────────────────────────
@@ -443,6 +444,7 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.pause_button.grid(row=0, column=1, padx=10)
 
+        # Bind Enter to start the test when not typing
         self.bind("<Return>", self.handle_enter)
 
     # ======================
@@ -566,6 +568,7 @@ class TypingSpeedTest(ctk.CTk):
         self.countdown = 3
         self.input_textbox.configure(state="disabled")
         self.start_button.configure(state="disabled")
+        # Reset pause button label in case it was left as "Resume"
         self.pause_button.configure(text="Pause")
 
         # Disable all settings while test is in progress
@@ -637,6 +640,7 @@ class TypingSpeedTest(ctk.CTk):
         if remaining == 0:
             self.check_result()
         else:
+            # Poll twice per second for accuracy
             self.after_id = self.after(500, self.update_timer)
 
     # ======================
@@ -657,13 +661,14 @@ class TypingSpeedTest(ctk.CTk):
                 self.after_cancel(self.live_wpm_after_id)
         else:
             self.pause_button.configure(text="Pause")
+            # Shift start_time forward by the length of the pause so elapsed is correct
             pause_duration = time.time() - self.pause_start
             self.start_time += pause_duration
             self.update_timer()
             self.update_live_wpm()
 
     # ======================
-    # HANDLE TYPING + SOUND
+    # HANDLE TYPING
     # ======================
 
     def handle_typing(self, event):
@@ -679,6 +684,7 @@ class TypingSpeedTest(ctk.CTk):
             "Return", "Shift_L", "Shift_R",
             "Control_L", "Control_R", "Alt_L", "Alt_R",
         ):
+            # Per-character correct/incorrect sound feedback
             if index <= len(self.current_sentence) and index > 0:
                 expected = self.current_sentence[index - 1]
                 if typed[-1] == expected:
@@ -688,7 +694,8 @@ class TypingSpeedTest(ctk.CTk):
 
         self.update_sentence_display()
 
-        if typed.strip() == self.current_sentence.strip():
+        # Auto-complete: if typed text matches the sentence exactly, end the test
+        if typed == self.current_sentence:
             self.check_result()
 
     # ======================
@@ -759,7 +766,7 @@ class TypingSpeedTest(ctk.CTk):
             self.live_wpm_after_id = None
 
         if not self.timer_running:
-            return
+            return  # Guard against double-fire (timer expiry + sentence completion)
 
         self.timer_running = False
         beep(1200, 300)
