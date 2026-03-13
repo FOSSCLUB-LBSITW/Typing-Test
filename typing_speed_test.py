@@ -8,11 +8,14 @@ from datetime import datetime, timedelta
 # winsound is Windows-only; fail gracefully on other platforms
 try:
     import winsound
+
     def beep(freq, dur):
         winsound.Beep(freq, dur)
 except ImportError:
+
     def beep(freq, dur):
-        pass  # Silent fallback on macOS / Linux
+        pass  # Silent fallback for macOS/Linux
+
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -142,7 +145,6 @@ def save_data(data):
 
 
 class TypingSpeedTest(ctk.CTk):
-
     def __init__(self):
         super().__init__()
 
@@ -162,9 +164,7 @@ class TypingSpeedTest(ctk.CTk):
 
         # ── TITLE ──────────────────────────────────────────────
         self.title_label = ctk.CTkLabel(
-            self,
-            text="Typing Speed Test",
-            font=("Helvetica", 30, "bold"),
+            self, text="Typing Speed Test", font=("Helvetica", 30, "bold")
         )
         self.title_label.pack(pady=15)
 
@@ -174,9 +174,7 @@ class TypingSpeedTest(ctk.CTk):
 
         # Duration selector
         self.duration_label = ctk.CTkLabel(
-            self.settings_frame,
-            text="Duration:",
-            font=("Helvetica", 14),
+            self.settings_frame, text="Duration:", font=("Helvetica", 14)
         )
         self.duration_label.grid(row=0, column=0, padx=(10, 5), pady=5)
 
@@ -192,9 +190,7 @@ class TypingSpeedTest(ctk.CTk):
 
         # Text-length / difficulty selector
         self.text_length_label = ctk.CTkLabel(
-            self.settings_frame,
-            text="Text Length:",
-            font=("Helvetica", 14),
+            self.settings_frame, text="Text Length:", font=("Helvetica", 14)
         )
         self.text_length_label.grid(row=0, column=2, padx=(10, 5), pady=5)
 
@@ -236,10 +232,7 @@ class TypingSpeedTest(ctk.CTk):
 
         # ── INPUT BOX ──────────────────────────────────────────
         self.input_textbox = ctk.CTkTextbox(
-            self,
-            width=660,
-            height=120,
-            font=("Helvetica", 16),
+            self, width=660, height=120, font=("Helvetica", 16)
         )
         self.input_textbox.pack(pady=10)
         self.input_textbox.configure(state="disabled")
@@ -431,8 +424,13 @@ class TypingSpeedTest(ctk.CTk):
         if event.keysym == "BackSpace":
             beep(500, 40)
         elif event.keysym not in (
-            "Return", "Shift_L", "Shift_R",
-            "Control_L", "Control_R", "Alt_L", "Alt_R",
+            "Return",
+            "Shift_L",
+            "Shift_R",
+            "Control_L",
+            "Control_R",
+            "Alt_L",
+            "Alt_R",
         ):
             beep(800, 30)
 
@@ -532,5 +530,9 @@ class TypingSpeedTest(ctk.CTk):
         self.start_button.configure(state="normal")
 
         # Re-enable settings selectors
-        self.duration_menu.configure(state="normal")
-        
+.duration_menu.configure(state=".text_length_menu.configure(state="normal")
+
+        self.sentence_textbox.configure(state="normal")
+        self.sentence_textbox.delete("1.0", "end")
+        self.sentence_textbox.insert("1.0", "Press Enter or click Start to begin")
+        self.sentence_textbox.configure(state="disabled")
