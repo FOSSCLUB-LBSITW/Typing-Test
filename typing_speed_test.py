@@ -20,11 +20,146 @@ ctk.set_default_color_theme("blue")
 DEFAULT_DURATION = 60
 DATA_FILE = "streak_data.json"
 
+
 # ============================================================
-# TEXT POOLS – keyed by difficulty / length category
+# WORD BANK — 200+ common English words by category
 # ============================================================
 
-TEXT_POOLS = {
+WORD_BANK = {
+    "nouns": [
+        "time", "world", "system", "program", "computer", "network", "data",
+        "project", "team", "design", "problem", "solution", "process",
+        "development", "technology", "software", "hardware", "engineer",
+        "student", "teacher", "market", "company", "product", "service",
+        "quality", "method", "approach", "strategy", "result", "experience",
+        "knowledge", "science", "research", "language", "history", "future",
+        "community", "environment", "industry", "platform", "framework",
+        "database", "server", "browser", "keyboard", "algorithm", "function",
+        "variable", "library", "module", "interface", "feature", "concept",
+        "pattern", "structure", "resource", "challenge", "opportunity",
+        "innovation", "progress", "creativity", "performance", "security",
+        "analysis", "feedback", "document", "application", "machine",
+        "device", "cloud", "energy", "practice", "culture", "leader",
+    ],
+    "verbs": [
+        "build", "create", "develop", "design", "improve", "manage",
+        "analyze", "solve", "learn", "teach", "write", "read", "test",
+        "deploy", "monitor", "optimize", "transform", "integrate",
+        "collaborate", "communicate", "explore", "discover", "implement",
+        "generate", "process", "support", "maintain", "update", "deliver",
+        "achieve", "understand", "consider", "provide", "require", "enable",
+        "produce", "organize", "evaluate", "measure", "enhance", "simplify",
+        "automate", "connect", "share", "protect", "strengthen", "inspire",
+        "accelerate", "establish", "refactor", "compile", "debug", "execute",
+    ],
+    "adjectives": [
+        "effective", "modern", "complex", "simple", "powerful", "reliable",
+        "creative", "innovative", "efficient", "robust", "scalable",
+        "flexible", "secure", "dynamic", "practical", "critical", "global",
+        "digital", "advanced", "essential", "productive", "responsive",
+        "consistent", "sustainable", "intelligent", "comprehensive",
+        "strategic", "technical", "functional", "intuitive", "clean",
+        "stable", "rapid", "elegant", "maintainable", "collaborative",
+        "parallel", "automated", "structured", "modular", "portable",
+    ],
+    "adverbs": [
+        "quickly", "efficiently", "effectively", "carefully", "rapidly",
+        "constantly", "frequently", "consistently", "significantly",
+        "dramatically", "naturally", "automatically", "successfully",
+        "properly", "directly", "easily", "simply", "precisely",
+        "thoroughly", "continuously", "increasingly", "fundamentally",
+        "reliably", "gracefully", "seamlessly", "independently",
+    ],
+    "connectors": [
+        "and", "but", "while", "because", "although", "since", "when",
+        "before", "after", "unless", "however", "therefore", "moreover",
+        "furthermore", "meanwhile", "nevertheless", "consequently",
+        "additionally", "yet", "so", "then", "also", "instead",
+    ],
+    "prepositions": [
+        "in", "on", "with", "for", "from", "about", "through", "across",
+        "between", "within", "beyond", "around", "during", "without",
+        "toward", "against", "among", "beneath", "above", "behind",
+    ],
+    "articles_determiners": [
+        "the", "a", "an", "every", "each", "many", "several", "some",
+        "most", "this", "that", "these", "those", "numerous", "various",
+    ],
+}
+
+# ============================================================
+# SENTENCE TEMPLATES — structural variety
+# ============================================================
+
+SENTENCE_TEMPLATES = [
+    "{det} {adj} {noun} {verb}s {adv}.",
+    "{det} {noun} can {verb} {det} {adj} {noun}.",
+    "{adv}, {det} {adj} {noun} {verb}s {det} {noun}.",
+    "{det} {noun} {verb}s {prep} {det} {adj} {noun}.",
+    "Every {adj} {noun} must {verb} {det} {noun} {adv}.",
+    "{det} {adj} {noun} {verb}s {conn} {det} {noun} {verb}s.",
+    "To {verb} {adv} is to {verb} {det} {adj} {noun}.",
+    "{det} {noun} {verb}s {det} {noun} {prep} {det} {adj} {noun}.",
+    "Many {adj} {noun}s {verb} {adv} {prep} {det} {noun}.",
+    "When {det} {noun} {verb}s, {det} {adj} {noun} {verb}s {adv}.",
+    "{det} {adj} {noun} helps {det} {noun} {verb} {adv}.",
+    "A {adj} {noun} will {verb} {det} {noun} {prep} {det} {noun}.",
+    "{adv}, {det} {noun} can {verb} {conn} {verb} {det} {adj} {noun}.",
+    "The best {noun}s {verb} {det} {adj} {noun} {adv}.",
+    "Without {det} {adj} {noun}, {det} {noun} cannot {verb} {adv}.",
+    "{det} {noun} {adv} {verb}s {det} {adj} {noun} {prep} {det} {noun}.",
+]
+
+
+# ============================================================
+# TEXT GENERATOR
+# ============================================================
+
+def _random_word(category: str) -> str:
+    """Pick a random word from the given word bank category."""
+    return random.choice(WORD_BANK[category])
+
+
+def generate_sentence() -> str:
+    """Generate a single random sentence from a template."""
+    template = random.choice(SENTENCE_TEMPLATES)
+    sentence = template.format(
+        det=_random_word("articles_determiners"),
+        adj=_random_word("adjectives"),
+        noun=_random_word("nouns"),
+        verb=_random_word("verbs"),
+        adv=_random_word("adverbs"),
+        conn=_random_word("connectors"),
+        prep=_random_word("prepositions"),
+    )
+    # Capitalize the first letter
+    return sentence[0].upper() + sentence[1:]
+
+
+def generate_text(mode: str) -> str:
+    """
+    Generate random text based on the selected text length mode.
+    - 'Short Sentence': 1 random sentence
+    - 'Paragraph': 3-5 random sentences joined
+    - 'Long Text': 7-10 random sentences joined
+    """
+    if mode == "Short Sentence":
+        return generate_sentence()
+    elif mode == "Paragraph":
+        count = random.randint(3, 5)
+        return " ".join(generate_sentence() for _ in range(count))
+    elif mode == "Long Text":
+        count = random.randint(7, 10)
+        return " ".join(generate_sentence() for _ in range(count))
+    else:
+        return generate_sentence()
+
+
+# ============================================================
+# STATIC TEXT POOLS — fallback / classic mode
+# ============================================================
+
+STATIC_TEXT_POOLS = {
     "Short Sentence": [
         "Technology is the most effective way to change the world.",
         "Innovation is the ability to see change as an opportunity.",
@@ -115,7 +250,9 @@ DURATION_OPTIONS = {
     "120 seconds": 120,
 }
 
-TEXT_LENGTH_OPTIONS = list(TEXT_POOLS.keys())
+TEXT_LENGTH_OPTIONS = list(STATIC_TEXT_POOLS.keys())
+
+TEXT_SOURCE_OPTIONS = ["Random Generated", "Classic Static"]
 
 
 # ======================
@@ -147,7 +284,7 @@ class TypingSpeedTest(ctk.CTk):
         super().__init__()
 
         self.title("Typing Speed Test")
-        self.geometry("750x720")
+        self.geometry("780x750")
 
         self.current_sentence = ""
         self.start_time = None
@@ -169,11 +306,11 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.title_label.pack(pady=15)
 
-        # ── SETTINGS FRAME (duration + text length selectors) ─
+        # ── SETTINGS FRAME (duration + text length + source) ──
         self.settings_frame = ctk.CTkFrame(self)
-        self.settings_frame.pack(pady=(0, 10))
+        self.settings_frame.pack(pady=(0, 5))
 
-        # Duration selector
+        # Row 0: Duration + Text Length
         self.duration_label = ctk.CTkLabel(
             self.settings_frame,
             text="Duration:",
@@ -191,7 +328,6 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.duration_menu.grid(row=0, column=1, padx=(0, 20), pady=5)
 
-        # Text-length / difficulty selector
         self.text_length_label = ctk.CTkLabel(
             self.settings_frame,
             text="Text Length:",
@@ -208,11 +344,27 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.text_length_menu.grid(row=0, column=3, padx=(0, 10), pady=5)
 
+        # Row 1: Text Source selector
+        self.text_source_label = ctk.CTkLabel(
+            self.settings_frame,
+            text="Text Source:",
+            font=("Helvetica", 14),
+        )
+        self.text_source_label.grid(row=1, column=0, padx=(10, 5), pady=5)
+
+        self.text_source_var = ctk.StringVar(value="Random Generated")
+        self.text_source_menu = ctk.CTkOptionMenu(
+            self.settings_frame,
+            variable=self.text_source_var,
+            values=TEXT_SOURCE_OPTIONS,
+            width=180,
+        )
+        self.text_source_menu.grid(row=1, column=1, columnspan=2, padx=(0, 20), pady=5)
+
         # ── STATS FRAME (timer + live WPM side by side) ───────
         self.stats_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.stats_frame.pack(pady=(5, 0))
 
-        # TIMER
         self.timer_label = ctk.CTkLabel(
             self.stats_frame,
             text=f"⏱ Time Remaining: {self.test_duration}s",
@@ -220,7 +372,6 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.timer_label.grid(row=0, column=0, padx=(20, 40))
 
-        # LIVE WPM
         self.live_wpm_label = ctk.CTkLabel(
             self.stats_frame,
             text="⌨ Live WPM: 0.00",
@@ -230,8 +381,8 @@ class TypingSpeedTest(ctk.CTk):
         self.live_wpm_label.grid(row=0, column=1, padx=(40, 20))
 
         # ── SENTENCE FRAME ─────────────────────────────────────
-        self.sentence_frame = ctk.CTkFrame(self, width=680, height=120)
-        self.sentence_frame.pack(pady=20)
+        self.sentence_frame = ctk.CTkFrame(self, width=700, height=130)
+        self.sentence_frame.pack(pady=15)
         self.sentence_frame.pack_propagate(False)
 
         self.sentence_textbox = ctk.CTkTextbox(
@@ -251,7 +402,7 @@ class TypingSpeedTest(ctk.CTk):
         # ── INPUT BOX ──────────────────────────────────────────
         self.input_textbox = ctk.CTkTextbox(
             self,
-            width=660,
+            width=680,
             height=120,
             font=("Helvetica", 16),
         )
@@ -259,7 +410,6 @@ class TypingSpeedTest(ctk.CTk):
         self.input_textbox.configure(state="disabled")
 
         self.input_textbox.bind("<KeyRelease>", self.handle_typing)
-        # Suppress newline insertion so Enter doesn't add a blank line
         self.input_textbox.bind("<Return>", lambda e: "break")
 
         # ── RESULT LABEL ───────────────────────────────────────
@@ -293,7 +443,6 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.pause_button.grid(row=0, column=1, padx=10)
 
-        # Bind Enter to start the test when not typing
         self.bind("<Return>", self.handle_enter)
 
     # ======================
@@ -327,6 +476,27 @@ class TypingSpeedTest(ctk.CTk):
             f"🏆 Personal Best Streak: {self.data.get('personal_best_streak', 0)}\n"
             f"⭐ Best WPM: {self.data.get('best_wpm', 0)}"
         )
+
+    # ======================
+    # TEXT GENERATION
+    # ======================
+
+    def get_test_text(self) -> str:
+        """
+        Return the test text based on the selected source and length mode.
+        - 'Random Generated': uses the template-based generator
+        - 'Classic Static': picks from the static text pools
+        """
+        text_length = self.text_length_var.get()
+        text_source = self.text_source_var.get()
+
+        if text_source == "Random Generated":
+            return generate_text(text_length)
+        else:
+            pool = STATIC_TEXT_POOLS.get(
+                text_length, STATIC_TEXT_POOLS["Short Sentence"]
+            )
+            return random.choice(pool)
 
     # ======================
     # CALCULATE CURRENT WPM
@@ -364,13 +534,12 @@ class TypingSpeedTest(ctk.CTk):
         current_wpm = self.calculate_current_wpm()
         self.live_wpm_label.configure(text=f"⌨ Live WPM: {current_wpm:.2f}")
 
-        # Color-code the live WPM for quick visual feedback
         if current_wpm >= 60:
-            self.live_wpm_label.configure(text_color="#00AA00")  # Green – fast
+            self.live_wpm_label.configure(text_color="#00AA00")
         elif current_wpm >= 30:
-            self.live_wpm_label.configure(text_color="#CC8800")  # Orange – moderate
+            self.live_wpm_label.configure(text_color="#CC8800")
         else:
-            self.live_wpm_label.configure(text_color="#CC0000")  # Red – slow
+            self.live_wpm_label.configure(text_color="#CC0000")
 
         self.live_wpm_after_id = self.after(1000, self.update_live_wpm)
 
@@ -382,7 +551,6 @@ class TypingSpeedTest(ctk.CTk):
         if self.timer_running:
             return
 
-        # Read user-selected duration
         self.test_duration = DURATION_OPTIONS.get(
             self.duration_var.get(), DEFAULT_DURATION
         )
@@ -390,7 +558,6 @@ class TypingSpeedTest(ctk.CTk):
             text=f"⏱ Time Remaining: {self.test_duration}s"
         )
 
-        # Reset live WPM display
         self.live_wpm_label.configure(
             text="⌨ Live WPM: 0.00", text_color="#555555"
         )
@@ -401,9 +568,10 @@ class TypingSpeedTest(ctk.CTk):
         self.start_button.configure(state="disabled")
         self.pause_button.configure(text="Pause")
 
-        # Disable settings while a test is in progress
+        # Disable all settings while test is in progress
         self.duration_menu.configure(state="disabled")
         self.text_length_menu.configure(state="disabled")
+        self.text_source_menu.configure(state="disabled")
 
         self.sentence_textbox.configure(state="normal")
         self.sentence_textbox.delete("1.0", "end")
@@ -435,10 +603,8 @@ class TypingSpeedTest(ctk.CTk):
     # ======================
 
     def begin_test(self):
-        # Pick text from the selected category
-        selected_length = self.text_length_var.get()
-        pool = TEXT_POOLS.get(selected_length, TEXT_POOLS["Short Sentence"])
-        self.current_sentence = random.choice(pool)
+        # Generate text based on selected source and length
+        self.current_sentence = self.get_test_text()
 
         self.update_sentence_display()
 
@@ -454,7 +620,7 @@ class TypingSpeedTest(ctk.CTk):
         self.pause_button.configure(state="normal")
 
         self.update_timer()
-        self.update_live_wpm()  # Start the live WPM loop
+        self.update_live_wpm()
 
     # ======================
     # TIMER (wall-clock based to avoid drift)
@@ -491,11 +657,10 @@ class TypingSpeedTest(ctk.CTk):
                 self.after_cancel(self.live_wpm_after_id)
         else:
             self.pause_button.configure(text="Pause")
-            # Shift start_time forward by the length of the pause
             pause_duration = time.time() - self.pause_start
             self.start_time += pause_duration
             self.update_timer()
-            self.update_live_wpm()  # Resume the live WPM loop
+            self.update_live_wpm()
 
     # ======================
     # HANDLE TYPING + SOUND
@@ -514,7 +679,6 @@ class TypingSpeedTest(ctk.CTk):
             "Return", "Shift_L", "Shift_R",
             "Control_L", "Control_R", "Alt_L", "Alt_R",
         ):
-            # Per-character correct/incorrect sound
             if index <= len(self.current_sentence) and index > 0:
                 expected = self.current_sentence[index - 1]
                 if typed[-1] == expected:
@@ -524,7 +688,6 @@ class TypingSpeedTest(ctk.CTk):
 
         self.update_sentence_display()
 
-        # Finish early if sentence completed
         if typed.strip() == self.current_sentence.strip():
             self.check_result()
 
@@ -596,15 +759,13 @@ class TypingSpeedTest(ctk.CTk):
             self.live_wpm_after_id = None
 
         if not self.timer_running:
-            return  # Guard against double-fire
+            return
 
         self.timer_running = False
         beep(1200, 300)
 
-        # Final WPM calculation
         final_wpm = self.calculate_current_wpm()
 
-        # Update live WPM label to show final value
         self.live_wpm_label.configure(
             text=f"⌨ Final WPM: {final_wpm:.2f}",
             text_color="#0055CC",
@@ -619,9 +780,10 @@ class TypingSpeedTest(ctk.CTk):
         self.pause_button.configure(state="disabled")
         self.start_button.configure(state="normal")
 
-        # Re-enable settings selectors
+        # Re-enable all settings selectors
         self.duration_menu.configure(state="normal")
         self.text_length_menu.configure(state="normal")
+        self.text_source_menu.configure(state="normal")
 
         self.sentence_textbox.configure(state="normal")
         self.sentence_textbox.delete("1.0", "end")
