@@ -8,14 +8,11 @@ from datetime import datetime, timedelta
 # winsound is Windows-only; fail gracefully on other platforms
 try:
     import winsound
-
     def beep(freq, dur):
         winsound.Beep(freq, dur)
 except ImportError:
-
     def beep(freq, dur):
-        pass  # Silent fallback for macOS/Linux
-
+        pass  # Silent fallback on macOS / Linux
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -118,7 +115,7 @@ DURATION_OPTIONS = {
     "120 seconds": 120,
 }
 
-TEXT_LENGTH_OPTIONS = list(TEXT_POOLS.keys())  # ["Short Sentence", "Paragraph", "Long Text"]
+TEXT_LENGTH_OPTIONS = list(TEXT_POOLS.keys())
 
 
 # ======================
@@ -145,6 +142,7 @@ def save_data(data):
 
 
 class TypingSpeedTest(ctk.CTk):
+
     def __init__(self):
         super().__init__()
 
@@ -164,7 +162,9 @@ class TypingSpeedTest(ctk.CTk):
 
         # ── TITLE ──────────────────────────────────────────────
         self.title_label = ctk.CTkLabel(
-            self, text="Typing Speed Test", font=("Helvetica", 30, "bold")
+            self,
+            text="Typing Speed Test",
+            font=("Helvetica", 30, "bold"),
         )
         self.title_label.pack(pady=15)
 
@@ -174,7 +174,9 @@ class TypingSpeedTest(ctk.CTk):
 
         # Duration selector
         self.duration_label = ctk.CTkLabel(
-            self.settings_frame, text="Duration:", font=("Helvetica", 14)
+            self.settings_frame,
+            text="Duration:",
+            font=("Helvetica", 14),
         )
         self.duration_label.grid(row=0, column=0, padx=(10, 5), pady=5)
 
@@ -190,7 +192,9 @@ class TypingSpeedTest(ctk.CTk):
 
         # Text-length / difficulty selector
         self.text_length_label = ctk.CTkLabel(
-            self.settings_frame, text="Text Length:", font=("Helvetica", 14)
+            self.settings_frame,
+            text="Text Length:",
+            font=("Helvetica", 14),
         )
         self.text_length_label.grid(row=0, column=2, padx=(10, 5), pady=5)
 
@@ -232,12 +236,16 @@ class TypingSpeedTest(ctk.CTk):
 
         # ── INPUT BOX ──────────────────────────────────────────
         self.input_textbox = ctk.CTkTextbox(
-            self, width=660, height=120, font=("Helvetica", 16)
+            self,
+            width=660,
+            height=120,
+            font=("Helvetica", 16),
         )
         self.input_textbox.pack(pady=10)
         self.input_textbox.configure(state="disabled")
 
         self.input_textbox.bind("<KeyRelease>", self.handle_typing)
+        # Suppress newline insertion so Enter doesn't add a blank line
         self.input_textbox.bind("<Return>", lambda e: "break")
 
         # ── RESULT LABEL ───────────────────────────────────────
@@ -257,7 +265,9 @@ class TypingSpeedTest(ctk.CTk):
         self.button_frame.pack(pady=10)
 
         self.start_button = ctk.CTkButton(
-            self.button_frame, text="Start Test", command=self.start_test
+            self.button_frame,
+            text="Start Test",
+            command=self.start_test,
         )
         self.start_button.grid(row=0, column=0, padx=10)
 
@@ -409,35 +419,40 @@ class TypingSpeedTest(ctk.CTk):
                 self.after_cancel(self.after_id)
         else:
             self.pause_button.configure(text="Pause")
+            # Shift start_time forward by the length of the pause
             pause_duration = time.time() - self.pause_start
             self.start_time += pause_duration
             self.update_timer()
 
     # ======================
-    # HANDLE TYPING
+    # HANDLE TYPING + SOUND
     # ======================
 
     def handle_typing(self, event):
         if not self.timer_running or self.paused:
             return
 
+        typed = self.input_textbox.get("1.0", "end-1c")
+        index = len(typed)
+
         if event.keysym == "BackSpace":
             beep(500, 40)
         elif event.keysym not in (
-            "Return",
-            "Shift_L",
-            "Shift_R",
-            "Control_L",
-            "Control_R",
-            "Alt_L",
-            "Alt_R",
+            "Return", "Shift_L", "Shift_R",
+            "Control_L", "Control_R", "Alt_L", "Alt_R",
         ):
-            beep(800, 30)
+            # Per-character correct/incorrect sound from main branch
+            if index <= len(self.current_sentence) and index > 0:
+                expected = self.current_sentence[index - 1]
+                if typed[-1] == expected:
+                    beep(800, 30)
+                else:
+                    beep(300, 80)
 
         self.update_sentence_display()
 
-        typed_text = self.input_textbox.get("1.0", "end-1c")
-        if typed_text == self.current_sentence:
+        # Finish early if sentence completed
+        if typed.strip() == self.current_sentence.strip():
             self.check_result()
 
     # ======================
@@ -504,7 +519,7 @@ class TypingSpeedTest(ctk.CTk):
             self.after_id = None
 
         if not self.timer_running:
-            return
+            return  # Guard against double-fire
 
         self.timer_running = False
         beep(1200, 300)
@@ -530,9 +545,15 @@ class TypingSpeedTest(ctk.CTk):
         self.start_button.configure(state="normal")
 
         # Re-enable settings selectors
-.duration_menu.configure(state=".text_length_menu.configure(state="normal")
+        self.duration_menu.configure(state="normal")
+        self.text_length_menu.configure(state="normal")
 
         self.sentence_textbox.configure(state="normal")
         self.sentence_textbox.delete("1.0", "end")
         self.sentence_textbox.insert("1.0", "Press Enter or click Start to begin")
         self.sentence_textbox.configure(state="disabled")
+
+
+if __name__ == "__main__":
+    app = TypingSpeedTest()
+    app.mainloop()
