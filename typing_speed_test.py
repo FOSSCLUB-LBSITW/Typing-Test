@@ -139,6 +139,12 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.pause_button.grid(row=0, column=1, padx=10)
 
+        self.bind("<Return>", self.handle_enter)
+
+    def handle_enter(self, event=None):
+        if self.start_button.cget("state") == "normal":
+            self.start_test()
+
     # ======================
     # STREAK TEXT
     # ======================
