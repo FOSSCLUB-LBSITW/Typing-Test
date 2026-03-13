@@ -84,6 +84,7 @@ class TypingSpeedTest(ctk.CTk):
         self.sentence_frame.pack(pady=20)
         self.sentence_frame.pack_propagate(False)
 
+        # Use a CTkTextbox for the sentence to allow highlighting
         self.sentence_textbox = ctk.CTkTextbox(
             self.sentence_frame,
             wrap="word",
@@ -95,6 +96,7 @@ class TypingSpeedTest(ctk.CTk):
         self.sentence_textbox.insert("1.0", "Press Enter or click Start to begin")
         self.sentence_textbox.configure(state="disabled")
 
+        # Configure tags for correct and incorrect characters
         self.sentence_textbox.tag_config("correct", foreground="green")
         self.sentence_textbox.tag_config("incorrect", foreground="red")
 
@@ -145,6 +147,7 @@ class TypingSpeedTest(ctk.CTk):
         )
         self.pause_button.grid(row=0, column=1, padx=10)
 
+        # Bind the Enter key to start the test
         self.bind("<Return>", self.handle_enter_key)
 
     # ======================
@@ -152,6 +155,7 @@ class TypingSpeedTest(ctk.CTk):
     # ======================
 
     def handle_enter_key(self, event):
+        # Start the test if it's not already running
         if not self.timer_running:
             self.start_test()
 
@@ -161,10 +165,10 @@ class TypingSpeedTest(ctk.CTk):
 
     def get_streak_text(self):
         return (
-            f"🔥 Daily Streak: {self.data['daily_streak']} days\n"
-            f"📈 Improvement Streak: {self.data['improvement_streak']}\n"
-            f"🏆 Personal Best Streak: {self.data['personal_best_streak']}\n"
-            f"⭐ Best WPM: {self.data['best_wpm']}"
+            f"🔥 Daily Streak: {self.data.get('daily_streak', 0)} days\n"
+            f"📈 Improvement Streak: {self.data.get('improvement_streak', 0)}\n"
+            f"🏆 Personal Best Streak: {self.data.get('personal_best_streak', 0)}\n"
+            f"⭐ Best WPM: {self.data.get('best_wpm', 0)}"
         )
 
     # ======================
@@ -179,7 +183,7 @@ class TypingSpeedTest(ctk.CTk):
         self.countdown = 3
         self.input_textbox.configure(state="disabled")
         self.start_button.configure(state="disabled")
-        
+
         self.sentence_textbox.configure(state="normal")
         self.sentence_textbox.delete("1.0", "end")
         self.sentence_textbox.configure(state="disabled")
@@ -211,7 +215,7 @@ class TypingSpeedTest(ctk.CTk):
 
     def begin_test(self):
         self.current_sentence = random.choice(SENTENCES)
-        self.update_sentence_display()
+        self.update_sentence_display()  # Initial display of the sentence
 
         self.input_textbox.configure(state="normal")
         self.input_textbox.delete("1.0", "end")
@@ -259,17 +263,19 @@ class TypingSpeedTest(ctk.CTk):
                 self.after_cancel(self.after_id)
         else:
             self.pause_button.configure(text="Pause")
+            # Recalculate start_time to account for the pause
             self.start_time = time.time() - (TEST_DURATION - self.time_left)
             self.update_timer()
 
     # ======================
-    # HANDLE TYPING + SOUND
+    # HANDLE TYPING
     # ======================
 
     def handle_typing(self, event):
         if not self.timer_running or self.paused:
             return
 
+        # Play sound for feedback
         if event.keysym == "BackSpace":
             winsound.Beep(500, 40)
         else:
@@ -278,6 +284,7 @@ class TypingSpeedTest(ctk.CTk):
         self.update_sentence_display()
 
         typed_text = self.input_textbox.get("1.0", "end-1c")
+        # Automatically end test when the sentence is typed correctly
         if typed_text == self.current_sentence:
             self.check_result()
 
@@ -288,9 +295,9 @@ class TypingSpeedTest(ctk.CTk):
     def update_sentence_display(self):
         self.sentence_textbox.configure(state="normal")
         self.sentence_textbox.delete("1.0", "end")
-        
+
         typed_text = self.input_textbox.get("1.0", "end-1c")
-        
+
         for i, char in enumerate(self.current_sentence):
             if i < len(typed_text):
                 if typed_text[i] == char:
@@ -298,9 +305,11 @@ class TypingSpeedTest(ctk.CTk):
                 else:
                     self.sentence_textbox.insert(f"1.{i}", char, "incorrect")
             else:
+                # Insert remaining characters without a tag
                 self.sentence_textbox.insert(f"1.{i}", char)
-                
+
         self.sentence_textbox.configure(state="disabled")
+
 
     # ======================
     # UPDATE STREAKS
@@ -345,18 +354,19 @@ class TypingSpeedTest(ctk.CTk):
 
         if not self.timer_running:
             return
-        
+
         self.timer_running = False
         winsound.Beep(1200, 300)
 
         typed_text = self.input_textbox.get("1.0", "end-1c")
         elapsed_time = time.time() - self.start_time
 
+        # Calculate WPM based on correctly typed characters
         correct_chars = 0
         for i, char in enumerate(typed_text):
             if i < len(self.current_sentence) and self.current_sentence[i] == char:
                 correct_chars += 1
-        
+
         wpm = (correct_chars / 5) / (elapsed_time / 60) if elapsed_time > 0 else 0
 
         self.update_streaks(wpm)
@@ -367,7 +377,8 @@ class TypingSpeedTest(ctk.CTk):
         self.input_textbox.configure(state="disabled")
         self.pause_button.configure(state="disabled")
         self.start_button.configure(state="normal")
-        
+
+        # Reset the sentence display for the next round
         self.sentence_textbox.configure(state="normal")
         self.sentence_textbox.delete("1.0", "end")
         self.sentence_textbox.insert("1.0", "Press Enter or click Start to begin")
